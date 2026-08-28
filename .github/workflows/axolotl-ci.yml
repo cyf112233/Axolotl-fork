@@ -82,6 +82,9 @@ jobs:
         working-directory: third-party/blockbench
       - uses: ./.github/actions/replace-gradle-mirror
       - run: pnpm --filter @modrinth/app-frontend build
+      - name: Build Tauri app (non-Windows)
+        if: runner.os != 'Windows'
+        run: pnpm --filter @modrinth/app tauri build
       - name: Test version metadata writes
         run: cargo test --package theseus writing_version_info_creates_missing_parent_directory
       - run: cargo check --package theseus_gui --features updater
@@ -110,6 +113,18 @@ jobs:
           }
           Write-Output "Built native NSIS installer: $($installers[0].Name)"
       - name: Show Rust compiler cache statistics
+      - name: Upload Windows installers
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-${{ runner.os }}
+          path: target/release/bundle/nsis/*.exe
+      - name: Upload Tauri artifact (non-Windows)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-artifact
+          path: target/release/bundle/**
         if: runner.os == 'Windows' && steps.sccache.outcome == 'success' && always()
         shell: bash
         run: ${SCCACHE_PATH} --show-stats
