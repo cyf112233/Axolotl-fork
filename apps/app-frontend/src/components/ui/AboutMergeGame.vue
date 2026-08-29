@@ -246,7 +246,7 @@ const messages = defineMessages({
 	},
 	tapToDrop: {
 		id: 'app.settings.about.game.tap-to-drop',
-		defaultMessage: 'Click to drop a pink axolotl',
+		defaultMessage: 'Click to drop a rainbow axolotl',
 	},
 	restart: { id: 'app.settings.about.game.restart', defaultMessage: 'Restart' },
 	exit: { id: 'app.settings.about.game.exit', defaultMessage: 'Exit game' },
@@ -332,7 +332,8 @@ function resetGame() {
 	rings.length = 0
 	surfaceY = Math.max(20, height * surfaceRatio)
 	canDropAt = 0
-	addPiece(0, width / 2, Math.max(30, floorY - radiusFor(0) - 4))
+	const startLevel = colors.length - 1
+	addPiece(startLevel, width / 2, Math.max(30, floorY - radiusFor(startLevel) - 4))
 }
 
 function triggerGameOver() {
@@ -364,9 +365,9 @@ function recordScore() {
 function dropPiece(event: PointerEvent) {
 	if (!canvas.value || gameOver.value || performance.now() < canDropAt) return
 	const rect = canvas.value.getBoundingClientRect()
-	const radius = radiusFor(0)
+	const radius = radiusFor(colors.length - 1)
 	const x = Math.max(radius, Math.min(width - radius, event.clientX - rect.left))
-	addPiece(0, x, radius + 8)
+	addPiece(colors.length - 1, x, radius + 8)
 	hasDropped.value = true
 	canDropAt = performance.now() + 180
 }
