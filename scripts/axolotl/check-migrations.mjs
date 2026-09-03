@@ -17,6 +17,23 @@ const knownPublishedDivergences = new Set([
 	].join('\0'),
 ])
 
+// Migrations deleted in a recorded release remain evidence of an incident. Their
+// bytes are unrecoverable from the published tag, so the deletion guard exempts
+// them (the canonical bytes live on in the repository and every later release).
+const knownPublishedDeletes = new Set([
+	['v1.7.6', 'packages/app-lib/migrations/20260802120000_content-icon-path.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260802121000_add-official-preferred-download-source.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260802122000_add-system-proxy-setting.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260803120000_instance-content-ownership.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260803130000_remove-system-proxy-setting.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260804120000_home-widgets.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260805120000_ai-providers.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260805130000_discard-legacy-openai-config.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260810120000_mojang-auth-source.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260810130000_instance-config-sync.sql'].join('\0'),
+	['v1.7.6', 'packages/app-lib/migrations/20260812120000_terracotta-public-nodes.sql'].join('\0'),
+])
+
 function git(args, encoding = 'utf8') {
 	return execFileSync('git', args, {
 		encoding,
@@ -163,6 +180,13 @@ function auditPublishedReleases(currentRef) {
 		const released = migrationMapAt(release.tagName)
 		for (const file of canonical.keys()) {
 			if (!released.has(file)) {
+				const divergence = [release.tagName, file].join('\0')
+				if (knownPublishedDeletes.has(divergence)) {
+					warnings.push(
+						`${release.tagName} contains the known historical migration deletion in ${file}`,
+					)
+					continue
+				}
 				failures.push(`PUBLISHED DELETE ${release.tagName}: ${file}`)
 			}
 		}
